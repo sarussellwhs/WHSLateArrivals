@@ -1,0 +1,221 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Student Check‑In</title>
+
+  <script src="https://epson.github.io/ePOS-Print-SDK/js/epos-print-5.0.0.js"></script>
+
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f5f5f7;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+    }
+
+    .container {
+      background: white;
+      width: 100%;
+      max-width: 520px;
+      padding: 32px;
+      margin-top: 40px;
+      border-radius: 18px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 32px;
+      margin-bottom: 28px;
+      font-weight: 700;
+      color: #222;
+    }
+
+    label {
+      display: block;
+      margin-top: 20px;
+      font-size: 20px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    input {
+      width: 100%;
+      padding: 16px;
+      margin-top: 8px;
+      font-size: 22px;
+      border: 2px solid #ccc;
+      border-radius: 10px;
+      box-sizing: border-box;
+      background: #fafafa;
+    }
+
+    input:focus {
+      border-color: #007aff;
+      background: white;
+      outline: none;
+    }
+
+    button {
+      margin-top: 32px;
+      width: 100%;
+      padding: 20px;
+      font-size: 26px;
+      font-weight: 700;
+      background: #007aff;
+      color: white;
+      border: none;
+      border-radius: 14px;
+      box-shadow: 0 4px 12px rgba(0,122,255,0.3);
+    }
+
+    button:active {
+      background: #005bb5;
+    }
+
+    .status {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 18px;
+      min-height: 24px;
+      color: #444;
+    }
+
+    .flash {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 200, 0, 0.92);
+      color: white;
+      font-size: 64px;
+      font-weight: 800;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s ease-out;
+      z-index: 9999;
+    }
+    .flash.show {
+      opacity: 1;
+    }
+  </style>
+</head>
+
+<body>
+
+  <audio id="success" src="success.mp3" preload="auto"></audio>
+
+  <div class="container">
+ <h1>WHS Late Arrival Sign In</h1>
+   <h4>After submitting the form, a pass will print automatically.</h4>
+  <h4>Take your pass from the printer and proceed to class.</h4>
+    
+    <form id="printForm">
+      <label for="lastName">Last Name</label>
+      <input id="lastName" name="lastName" required>
+
+      <label for="firstName">First Name</label>
+      <input id="firstName" name="firstName" required>
+
+      <button type="submit">Print & Save</button>
+    </form>
+
+    <div class="status" id="status"></div>
+  </div>
+
+  <div id="successFlash" class="flash">✔ Checked In</div>
+
+  <script>
+    const PRINTER_IP = "192.168.1.50";
+    const PRINTER_PORT = 8008;
+
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxUDshq3VbkFVkBpFNMjfdGwdDVvoL20MfQS8uODw2dc_7UmgKnPce4n97nRVdKh8PL/exec";
+
+    const statusEl = document.getElementById("status");
+
+    document.getElementById("printForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      statusEl.textContent = "Processing…";
+
+      const lastName = e.target.lastName.value.trim();
+      const firstName = e.target.firstName.value.trim();
+      const timestamp = new Date().toLocaleString();
+
+      const entry = { lastName, firstName, timestamp };
+
+      const printText = formatPrintText(entry);
+
+      //printToEpson(printText);
+      saveToGoogleSheets(entry);
+
+      e.target.reset();
+      document.getElementById("success").play();
+      showSuccessFlash();
+
+      statusEl.textContent = "Ready for next student.";
+    });
+
+    function formatPrintText(entry) {
+      return (
+        "WHS Late Arrival Pass\n" +
+        "-------------------------\n" +
+        "Last Name:  " + entry.lastName + "\n" +
+        "First Name: " + entry.firstName + "\n" +
+        "Time:       " + entry.timestamp + "\n" +
+        "-------------------------\n\n"
+      );
+    }
+
+    /*function printToEpson(text) {
+      const device = new epson.ePOSDevice();
+
+      device.connect(PRINTER_IP, PRINTER_PORT, function (result) {
+        if (result !== "OK") {
+          statusEl.textContent = "Printer connection failed: " + result;
+          return;
+        }
+
+        device.createDevice(
+          "local_printer",
+          device.DEVICE_TYPE_PRINTER,
+          { crypto: false, buffer: false },
+          function (printer, code) {
+            if (!printer) {
+              statusEl.textContent = "Printer error: " + code;
+              return;
+            }
+
+            printer.addText(text);
+            printer.addFeedLine(2);
+            printer.send();
+          }
+        );
+      });
+    }*/
+
+    function saveToGoogleSheets(entry) {
+      fetch(GOOGLE_SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify(entry)
+      });
+    }
+
+    function showSuccessFlash() {
+      const flash = document.getElementById("successFlash");
+      flash.classList.add("show");
+      setTimeout(() => flash.classList.remove("show"), 700);
+    }
+  </script>
+
+</body>
+</html>
