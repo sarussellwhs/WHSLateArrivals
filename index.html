@@ -136,7 +136,7 @@
   <div id="successFlash" class="flash">✔ Checked In</div>
 
   <script>
-    const PRINTER_IP = "192.168.1.50";
+    const PRINTER_IP = "10.233.123.154";
     const PRINTER_PORT = 8008;
 
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxUDshq3VbkFVkBpFNMjfdGwdDVvoL20MfQS8uODw2dc_7UmgKnPce4n97nRVdKh8PL/exec";
@@ -155,7 +155,7 @@
 
       const printText = formatPrintText(entry);
 
-      //printToEpson(printText);
+      printToEpson(printText);
       saveToGoogleSheets(entry);
 
       e.target.reset();
@@ -176,7 +176,7 @@
       );
     }
 
-    /*function printToEpson(text) {
+    function printToEpson(text) {
       const device = new epson.ePOSDevice();
 
       device.connect(PRINTER_IP, PRINTER_PORT, function (result) {
@@ -201,7 +201,7 @@
           }
         );
       });
-    }*/
+    }
 
     function saveToGoogleSheets(entry) {
       fetch(GOOGLE_SCRIPT_URL, {
